@@ -32,7 +32,8 @@ always @(posedge clk or negedge rst) begin
         case (state)
             // Step 1: IDLE State 
             IDLE: begin
-                if (start) begin
+                if (start) 
+                begin
                     sign_a = a[31];
                     sign_b = b[31];
                     exp_a = a[30:23];
@@ -41,11 +42,14 @@ always @(posedge clk or negedge rst) begin
                     mant_b = {1'b1, b[22:0]};  
 
                     // Step 2: making the exponents equal
-                    if (exp_a > exp_b) begin
+                    if (exp_a > exp_b) 
+                    begin
                         exp_diff = exp_a - exp_b;
                         mant_b = mant_b >> exp_diff;
                         exp_sum = exp_a;
-                    end else begin
+                    end 
+                    else 
+                    begin
                         exp_diff = exp_b - exp_a;
                         mant_a = mant_a >> exp_diff;
                         exp_sum = exp_b;
@@ -56,14 +60,19 @@ always @(posedge clk or negedge rst) begin
 
             // Step 3: Add/Subtract the Mantissa
             ADD: begin
-                if (sign_a == sign_b) begin
+                if (sign_a == sign_b)
+                 begin
                     mant_sum = mant_a + mant_b;
                     sign_sum = sign_a;
-                end else begin
+                end 
+                else 
+                begin
                     if (mant_a > mant_b) begin
                         mant_sum = mant_a - mant_b;
                         sign_sum = sign_a;
-                    end else begin
+                    end 
+                    else 
+                    begin
                         mant_sum = mant_b - mant_a;
                         sign_sum = sign_b;
                     end
@@ -72,11 +81,15 @@ always @(posedge clk or negedge rst) begin
             end
 
             // Step 4: Normalize the Result
-            NORMALIZE: begin
-                if (mant_sum[24]) begin  // If carry generated, shift right and add to exponent
+            NORMALIZE: 
+            begin
+                if (mant_sum[24]) 
+                begin  // If carry generated, shift right and add to exponent
                     mant_sum = mant_sum >> 1;
                     exp_sum = exp_sum + 1;
-                end else begin  // Normalize left shift
+                end
+                 else 
+                 begin  // Normalize left shift
                     while (!mant_sum[23] && exp_sum > 0) begin
                         mant_sum = mant_sum << 1;
                         exp_sum = exp_sum - 1;
