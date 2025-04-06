@@ -1,0 +1,98 @@
+`timescale 1ns / 1ps
+
+module float_add (
+    input wire clk,
+    input wire rst,
+    input wire start,
+    input wire [31:0] a,    // First number (IEEE 754 format)
+    input wire [31:0] b,    // Second  number 
+    output reg [31:0] sum   //sum output (IEEE 754 format)
+);
+
+
+reg sign_a, sign_b, sign_sum;
+reg [7:0] exp_a, exp_b, exp_sum;
+reg [23:0] mant_a, mant_b;
+reg [24:0] mant_sum;  // Extra bit for carry handling
+reg [8:0] exp_diff;
+reg [1:0] state;
+reg carry;
+
+// State machine parameters
+parameter IDLE = 2'b00;
+parameter ADD  = 2'b01;
+parameter NORMALIZE = 2'b10;
+parameter OUTPUT = 2'b11;
+
+always @(posedge clk or negedge rst) begin
+    if (!rst) begin
+        state <= IDLE;
+        sum <= 32'd0;
+    end else begin
+        case (state)
+            // Step 1: IDLE State 
+            IDLE: begin
+                if (start) begin
+                    sign_a = a[31];
+                    sign_b = b[31];
+                    exp_a = a[30:23];
+                    exp_b = b[30:23];
+                    mant_a = {1'b1, a[22:0]};  // Adding implicit 1 to gret full mantissa
+                    mant_b = {1'b1, b[22:0]};  
+
+                    // Step 2: making the exponents equal
+                    if (exp_a > exp_b) begin
+                        exp_diff = exp_a - exp_b;
+                        mant_b = mant_b >> exp_diff;
+                        exp_sum = exp_a;
+                    end else begin
+                        exp_diff = exp_b - exp_a;
+                        mant_a = mant_a >> exp_diff;
+                        exp_sum = exp_b;
+                    end
+                    state <= ADD;
+                end
+            end
+
+            // Step 3: Add/Subtract the Mantissa
+            ADD: begin
+                if (sign_a == sign_b) begin
+                    mant_sum = mant_a + mant_b;
+                    sign_sum = sign_a;
+                end else begin
+                    if (mant_a > mant_b) begin
+                        mant_sum = mant_a - mant_b;
+                        sign_sum = sign_a;
+                    end else begin
+                        mant_sum = mant_b - mant_a;
+                        sign_sum = sign_b;
+                    end
+                end
+                state <= NORMALIZE;
+            end
+
+            // Step 4: Normalize the Result
+            NORMALIZE: begin
+                if (mant_sum[24]) begin  // If carry generated, shift right and add to exponent
+                    mant_sum = mant_sum >> 1;
+                    exp_sum = exp_sum + 1;
+                end else begin  // Normalize left shift
+                    while (!mant_sum[23] && exp_sum > 0) begin
+                        mant_sum = mant_sum << 1;
+                        exp_sum = exp_sum - 1;
+                    end
+                end
+                state <= OUTPUT;
+            end
+
+            // Step 5: convert back to IEEE 754 Format
+            OUTPUT: begin
+                sum = {sign_sum, exp_sum, mant_sum[22:0]};
+                state <= IDLE;
+            end
+        endcase
+    end
+end
+
+endmodule
+
