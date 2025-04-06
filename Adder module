@@ -18,7 +18,6 @@ reg [8:0] exp_diff;
 reg [1:0] state;
 reg carry;
 
-// State machine parameters
 parameter IDLE = 2'b00;
 parameter ADD  = 2'b01;
 parameter NORMALIZE = 2'b10;
