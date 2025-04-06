@@ -1,0 +1,80 @@
+`timescale 1ns / 1ps
+
+module float_add_tb;
+    reg [31:0] a, b;     
+    reg clk, rst, start; 
+    wire [31:0] sum;     
+
+    // Instantiation
+    float_add inst (
+        clk,
+        rst,
+       start,
+        a,
+        b,
+        sum
+    );
+    always #5 clk = ~clk;
+
+    initial begin
+        $monitor($time, " a=%h, b=%h, sum=%h", a, b, sum);
+
+        // Initialize signals
+        clk = 1;
+        rst = 0;
+        start = 0;
+        #10 rst = 1;
+
+        //  6.75 + (-3.75)
+        a = 32'h40d80000;  // 6.75
+        b = 32'hc0700000;  // -3.75
+        #10 start = 1;
+        #10 start = 0;
+        #50;  
+
+        // -6.75 + 3.75
+        a = 32'hc0d80000;  
+        b = 32'h40700000;  
+        #10 start = 1;
+        #10 start = 0;
+        #50;  
+
+        // 3.75 + (-6.75)
+        a = 32'h40700000;  
+        b = 32'hc0d80000;  
+        #10 start = 1;
+        #10 start = 0;
+        #50;  
+
+        // -3.75 + 6.75
+                a = 32'hc0700000;  
+        b = 32'h40d80000;  
+        #10 start = 1;
+        #10 start = 0;
+        #50;  
+
+        //  2.5 + 4.25
+        a = 32'h40200000;  // 2.5
+        b = 32'h40880000;  // 4.25
+        #10 start = 1;
+        #10 start = 0;
+        #50;  
+
+        // 0.5 + 1.75
+        a = 32'h3F000000;  // 0.5
+        b = 32'h3FC00000;  // 1.75
+        #10 start = 1;
+        #10 start = 0;
+        #50;  
+
+        //  -2.5 + (-1.5)
+        a = 32'hC0200000;  // -2.5
+        b = 32'hBFC00000;  // -1.5
+        #10 start = 1;
+        #10 start = 0;
+        #50;  
+
+        $finish;
+        end
+endmodule
+
